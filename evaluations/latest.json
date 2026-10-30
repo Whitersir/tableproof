@@ -1,0 +1,203 @@
+{
+  "evaluated_at_utc": "2026-10-30T10:11:08.839880+00:00",
+  "python": "3.11.5",
+  "kind": "deterministic_business_regression",
+  "data": "synthetic_with_manual_expected_answers",
+  "real_model_evaluated": false,
+  "total": 12,
+  "passed": 12,
+  "cases": [
+    {
+      "id": "E01-basic",
+      "passed": true,
+      "differences": {},
+      "totals": {
+        "registration_rows": 3,
+        "checkin_rows": 2,
+        "valid_registered": 3,
+        "arrived": 2,
+        "absent": 1,
+        "attendance_rate": "66.67",
+        "excluded_registration_rows": 0,
+        "duplicate_checkin_rows": 0,
+        "unregistered_people": 0
+      }
+    },
+    {
+      "id": "E02-duplicate-checkin",
+      "passed": true,
+      "differences": {},
+      "totals": {
+        "registration_rows": 2,
+        "checkin_rows": 3,
+        "valid_registered": 2,
+        "arrived": 1,
+        "absent": 1,
+        "attendance_rate": "50.00",
+        "excluded_registration_rows": 0,
+        "duplicate_checkin_rows": 2,
+        "unregistered_people": 0
+      }
+    },
+    {
+      "id": "E03-identical-registration",
+      "passed": true,
+      "differences": {},
+      "totals": {
+        "registration_rows": 3,
+        "checkin_rows": 1,
+        "valid_registered": 2,
+        "arrived": 1,
+        "absent": 1,
+        "attendance_rate": "50.00",
+        "excluded_registration_rows": 0,
+        "duplicate_checkin_rows": 0,
+        "unregistered_people": 0
+      }
+    },
+    {
+      "id": "E04-conflicting-id",
+      "passed": true,
+      "differences": {},
+      "totals": {
+        "registration_rows": 3,
+        "checkin_rows": 2,
+        "valid_registered": 1,
+        "arrived": 1,
+        "absent": 0,
+        "attendance_rate": "100.00",
+        "excluded_registration_rows": 2,
+        "duplicate_checkin_rows": 0,
+        "unregistered_people": 0
+      }
+    },
+    {
+      "id": "E05-empty-identifier",
+      "passed": true,
+      "differences": {},
+      "totals": {
+        "registration_rows": 2,
+        "checkin_rows": 1,
+        "valid_registered": 1,
+        "arrived": 0,
+        "absent": 1,
+        "attendance_rate": "0.00",
+        "excluded_registration_rows": 1,
+        "duplicate_checkin_rows": 0,
+        "unregistered_people": 0
+      }
+    },
+    {
+      "id": "E06-leading-zero",
+      "passed": true,
+      "differences": {},
+      "totals": {
+        "registration_rows": 2,
+        "checkin_rows": 1,
+        "valid_registered": 2,
+        "arrived": 1,
+        "absent": 1,
+        "attendance_rate": "50.00",
+        "excluded_registration_rows": 0,
+        "duplicate_checkin_rows": 0,
+        "unregistered_people": 0
+      }
+    },
+    {
+      "id": "E07-unregistered-dedup",
+      "passed": true,
+      "differences": {},
+      "totals": {
+        "registration_rows": 1,
+        "checkin_rows": 2,
+        "valid_registered": 1,
+        "arrived": 0,
+        "absent": 1,
+        "attendance_rate": "0.00",
+        "excluded_registration_rows": 0,
+        "duplicate_checkin_rows": 1,
+        "unregistered_people": 1
+      }
+    },
+    {
+      "id": "E08-zero-denominator",
+      "passed": true,
+      "differences": {},
+      "totals": {
+        "registration_rows": 0,
+        "checkin_rows": 1,
+        "valid_registered": 0,
+        "arrived": 0,
+        "absent": 0,
+        "attendance_rate": null,
+        "excluded_registration_rows": 0,
+        "duplicate_checkin_rows": 0,
+        "unregistered_people": 1
+      }
+    },
+    {
+      "id": "E09-empty-checkin",
+      "passed": true,
+      "differences": {},
+      "totals": {
+        "registration_rows": 2,
+        "checkin_rows": 0,
+        "valid_registered": 2,
+        "arrived": 0,
+        "absent": 2,
+        "attendance_rate": "0.00",
+        "excluded_registration_rows": 0,
+        "duplicate_checkin_rows": 0,
+        "unregistered_people": 0
+      }
+    },
+    {
+      "id": "E10-composite",
+      "passed": true,
+      "differences": {},
+      "totals": {
+        "registration_rows": 2,
+        "checkin_rows": 1,
+        "valid_registered": 2,
+        "arrived": 1,
+        "absent": 1,
+        "attendance_rate": "50.00",
+        "excluded_registration_rows": 0,
+        "duplicate_checkin_rows": 0,
+        "unregistered_people": 0
+      }
+    },
+    {
+      "id": "E11-filter-scope",
+      "passed": true,
+      "differences": {},
+      "totals": {
+        "registration_rows": 1,
+        "checkin_rows": 3,
+        "valid_registered": 1,
+        "arrived": 1,
+        "absent": 0,
+        "attendance_rate": "100.00",
+        "excluded_registration_rows": 0,
+        "duplicate_checkin_rows": 0,
+        "unregistered_people": 1
+      }
+    },
+    {
+      "id": "E12-checkin-date",
+      "passed": true,
+      "differences": {},
+      "totals": {
+        "registration_rows": 2,
+        "checkin_rows": 1,
+        "valid_registered": 2,
+        "arrived": 1,
+        "absent": 1,
+        "attendance_rate": "50.00",
+        "excluded_registration_rows": 0,
+        "duplicate_checkin_rows": 0,
+        "unregistered_people": 0
+      }
+    }
+  ]
+}

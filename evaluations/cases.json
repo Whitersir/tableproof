@@ -1,0 +1,14 @@
+[
+  {"id":"E01-basic","registration":"id,班级\n001,A\n002,B\n003,A\n","checkin":"id\n001\n003\n","expected":{"valid_registered":3,"arrived":2,"absent":1,"attendance_rate":"66.67"},"absent":["002"]},
+  {"id":"E02-duplicate-checkin","registration":"id\n001\n002\n","checkin":"id\n001\n001\n001\n","expected":{"arrived":1,"duplicate_checkin_rows":2}},
+  {"id":"E03-identical-registration","registration":"id,姓名\n001,甲\n001,甲\n002,乙\n","checkin":"id\n001\n","expected":{"valid_registered":2,"arrived":1},"issues":["重复报名"]},
+  {"id":"E04-conflicting-id","registration":"id,姓名\n001,甲\n001,乙\n002,丙\n","checkin":"id\n001\n002\n","expected":{"valid_registered":1,"arrived":1,"excluded_registration_rows":2},"issues":["报名标识冲突","签到匹配待确认"]},
+  {"id":"E05-empty-identifier","registration":"id,姓名\n,甲\n002,乙\n","checkin":"id,姓名\n,甲\n","expected":{"valid_registered":1,"arrived":0,"excluded_registration_rows":1},"issues":["报名标识为空","签到标识为空"]},
+  {"id":"E06-leading-zero","registration":"id\n001\n1\n","checkin":"id\n1\n","expected":{"valid_registered":2,"arrived":1},"absent":["001"]},
+  {"id":"E07-unregistered-dedup","registration":"id\n001\n","checkin":"id\n009\n009\n","expected":{"arrived":0,"unregistered_people":1,"duplicate_checkin_rows":1}},
+  {"id":"E08-zero-denominator","registration":"id\n","checkin":"id\n009\n","expected":{"valid_registered":0,"arrived":0,"attendance_rate":null}},
+  {"id":"E09-empty-checkin","registration":"id\n001\n002\n","checkin":"id\n","expected":{"valid_registered":2,"arrived":0,"absent":2,"attendance_rate":"0.00"}},
+  {"id":"E10-composite","registration":"姓名,班级\n甲,A\n甲,B\n","checkin":"姓名,班级\n甲,B\n","config":{"registration_keys":["姓名","班级"],"checkin_keys":["姓名","班级"]},"expected":{"valid_registered":2,"arrived":1,"attendance_rate":"50.00"}},
+  {"id":"E11-filter-scope","registration":"id,班级\n001,A\n002,B\n","checkin":"id\n001\n002\n009\n","config":{"registration_filters":[{"column":"班级","value":"A"}]},"expected":{"valid_registered":1,"arrived":1,"unregistered_people":1},"issues":["范围外签到","未报名签到"]},
+  {"id":"E12-checkin-date","registration":"id\n001\n002\n","checkin":"id,日期\n001,2026-10-29\n002,2026-10-30\n","config":{"checkin_filters":[{"column":"日期","value":"2026-10-29"}]},"expected":{"valid_registered":2,"arrived":1,"attendance_rate":"50.00"}}
+]

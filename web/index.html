@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>核对台 · 报名与签到</title>
+  <link rel="icon" href="/static/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/static/workspace.css"><script defer src="/static/app.js"></script>
+</head>
+<body>
+<a class="skip" href="#workspace">跳到核对工作区</a>
+<header class="topbar">
+  <a class="brand" href="/" aria-label="核对台首页"><svg viewBox="0 0 36 36" aria-hidden="true"><rect x="2" y="3" width="24" height="29" rx="5"/><path d="M9 11h10M9 17h8M17 25l5 5 11-13"/></svg><span>核对台<small>报名与签到</small></span></a>
+  <div class="top-actions"><div class="top-status"><span class="dot"></span><span id="service-status">连接本机服务…</span><span class="version">v0.2</span></div><button id="open-settings" class="settings-button">模型设置 <span id="settings-state">未配置</span></button></div>
+</header>
+<main>
+  <div class="intro"><div><p class="eyebrow">工作区 / CSV</p><h1>报名与签到核对</h1><p class="intro-copy">导入两份表格，核对记录并导出结果。</p></div><button id="demo-button" class="secondary">载入示例并核对</button></div>
+  <div id="message" class="message" role="alert" tabindex="-1" hidden></div>
+  <div class="workspace" id="workspace">
+    <section class="panel setup" aria-labelledby="setup-title">
+      <div class="panel-heading"><h2 id="setup-title">新建核对</h2><span class="small muted">原始文件保留在本机</span></div>
+      <form id="upload-form">
+        <div class="step-heading"><span class="step-number">1</span><h3>导入两张表</h3></div>
+        <div class="file-grid">
+          <label class="file-box"><span class="file-kind">报名表</span><input type="file" name="registration" id="registration-file" accept=".csv" required><span class="file-note">包含报名人员的唯一标识</span></label>
+          <label class="file-box"><span class="file-kind">签到表</span><input type="file" name="checkin" id="checkin-file" accept=".csv" required><span class="file-note">包含签到人员的对应标识</span></label>
+        </div>
+        <p class="hint">CSV · UTF-8 或 GB18030 · 每表最多 2 MB / 10000 条</p>
+        <button type="submit" id="upload-button" class="secondary full">导入并检查字段</button>
+      </form>
+      <div id="dataset-banner" class="dataset-banner" hidden></div>
+      <details id="preview-area" hidden><summary>查看前 5 条源记录</summary><div id="previews"></div></details>
+      <div class="step-heading section-gap"><span class="step-number">2</span><h3>选择核对方式</h3></div>
+      <div class="mode-switch" role="group" aria-label="核对方式"><button type="button" id="mode-local" aria-pressed="true">本地核对</button><button type="button" id="mode-agent" aria-pressed="false">Agent 任务</button></div>
+      <p id="mode-hint" class="hint">你选择字段，程序按固定规则计算。无需模型 API。</p>
+      <form id="run-form">
+        <div id="local-settings">
+          <div class="mapping-head"><span>报名表字段</span><span>签到表字段</span></div>
+          <div class="mapping"><label class="sr-only" for="registration-key">报名表主要匹配字段</label><select id="registration-key" required><option value="">先导入文件</option></select><span aria-hidden="true">↔</span><label class="sr-only" for="checkin-key">签到表主要匹配字段</label><select id="checkin-key" required><option value="">先导入文件</option></select></div>
+          <details><summary>组合匹配与筛选</summary><p class="hint">需要姓名+班级时，再选一组对应字段。所有匹配条件同时满足才算同一人。</p>
+            <div class="mapping"><label class="sr-only" for="registration-key-2">报名表第二匹配字段</label><select id="registration-key-2"></select><span aria-hidden="true">↔</span><label class="sr-only" for="checkin-key-2">签到表第二匹配字段</label><select id="checkin-key-2"></select></div>
+            <div class="filter-row"><label>报名表筛选字段<select id="registration-filter-column"></select></label><label>字段值完全等于<input id="registration-filter-value" placeholder="例如：软工一班"></label></div>
+            <div class="filter-row"><label>签到表筛选字段<select id="checkin-filter-column"></select></label><label>字段值完全等于<input id="checkin-filter-value" placeholder="例如：2026-10-29"></label></div>
+            <p class="hint">仅支持精确相等；日期带时间时需填写完整值，暂不支持日期区间。</p>
+          </details>
+          <label class="field-label" for="group-by">分组统计</label><select id="group-by"></select>
+        </div>
+        <div id="agent-settings" hidden><label class="field-label" for="agent-task">你希望完成什么？</label><textarea id="agent-task" rows="4" maxlength="3000">按学号核对报名和签到，按班级统计到场率，列出重复签到、未报名和未到场记录。</textarea><div class="task-examples"><button type="button" data-task="只统计软工一班，按学号核对报名与签到。">只看一个班</button><button type="button" data-task="按学号核对报名与签到，只使用日期为2026-10-29的签到，按班级统计。">按签到日期筛选</button></div><p id="model-status" class="hint">中转站 API 尚未配置，可以先使用本地核对。</p><p class="hint">模型先提出匹配与筛选方案，你确认后再执行计算。</p><label class="check-label"><input type="checkbox" id="consent">允许将任务文字、文件名、字段结构和聚合统计发送给我配置的中转站。原始名单不默认发送。</label></div>
+        <label class="check-label name-consent"><input type="checkbox" id="name-only">仅用姓名时，我确认接受同名风险；冲突记录仍需人工处理。</label>
+        <button class="primary full" type="submit" id="run-button" disabled>开始本地核对 →</button>
+      </form>
+      <div class="sample-links"><span>还没有文件？</span><a href="/samples/registration.csv" download>示例报名表</a><a href="/samples/checkin.csv" download>示例签到表</a></div>
+    </section>
+    <section class="result-column" aria-labelledby="results-title">
+      <div class="panel result-panel"><div class="panel-heading"><h2 id="results-title">核对结果</h2><span id="run-status" class="badge">等待导入</span></div>
+        <div id="empty-state" class="empty-state"><div class="sheet-symbol" aria-hidden="true"><span>报名表</span><span>↔</span><span>签到表</span></div><h3>尚未开始核对</h3><p>在左侧导入文件并选择匹配字段，<br>或载入示例查看完整结果。</p><p class="small muted">示例为虚构数据。</p></div>
+        <div id="run-progress" class="progress-note" role="status" hidden>正在执行，请稍候。执行记录会自动更新。</div>
+        <section id="plan-review" class="plan-review" aria-labelledby="plan-title" hidden><div class="plan-heading"><h3 id="plan-title">确认核对方案</h3><span class="badge">尚未执行</span></div><p class="hint">请核对匹配字段与筛选范围。你也可以写下需要修改的内容，让模型重新提出方案。</p><dl id="plan-fields"></dl><label class="field-label" for="plan-note">需要调整？</label><textarea id="plan-note" rows="2" maxlength="3000" placeholder="例如：只看软工一班，日期改为2026-10-30"></textarea><div class="review-actions"><button id="approve-plan" class="primary">确认方案并执行</button><button id="revise-plan" class="secondary">按说明修改方案</button></div></section>
+        <section id="clarification" class="clarification" aria-labelledby="question-title" hidden><h3 id="question-title">需要你确认</h3><p id="question-text"></p><form id="answer-form"><label class="field-label" for="answer">补充说明</label><textarea id="answer" rows="2" maxlength="3000"></textarea><button type="submit" class="secondary" id="continue-button">提交并继续</button></form><p id="local-question-hint" class="hint" hidden>请修改左侧字段，或勾选姓名匹配确认，然后重新核对。</p></section>
+        <div id="result-content" hidden><div class="metrics" id="metrics"></div><div id="quality-note" class="quality-note"></div><div id="downloads" class="downloads"></div>
+          <div class="result-tabs" role="group" aria-label="查看结果类型"><button type="button" data-tab="groups" aria-pressed="true">分组统计</button><button type="button" data-tab="details" aria-pressed="false">人员明细</button><button type="button" data-tab="issues" aria-pressed="false">异常与待确认</button></div>
+          <div class="table-toolbar"><span id="table-caption" class="small muted"></span><label class="sr-only" for="table-search">在当前预览中搜索</label><input type="search" id="table-search" placeholder="在当前预览中搜索"></div><div class="table-scroll" tabindex="0" aria-label="核对结果表"><table id="result-table"></table></div>
+          <details class="rules"><summary>统计口径与匹配规则</summary><div id="rules-content"></div></details>
+        </div>
+      </div>
+      <section class="panel trace-panel"><div class="panel-heading"><h2>执行记录</h2><span class="small muted" id="usage">尚未执行</span></div><ol id="trace-list" class="trace-list"><li class="muted">运行后可查看读取、核对、工具调用和失败原因。</li></ol></section>
+    </section>
+  </div>
+  <section class="panel history-panel"><div class="panel-heading"><h2>最近任务</h2><button class="text-button" id="refresh-history">刷新记录</button></div><div id="history" class="history-list"><p class="muted small">尚无任务记录。</p></div></section>
+  <footer><span>核对台 · 本地单用户版本</span><span>结果支持追溯，待确认项由你判断。</span></footer>
+</main>
+<dialog id="settings-dialog" aria-labelledby="settings-title" aria-describedby="settings-description">
+  <div class="dialog-heading"><div><p class="eyebrow">使用你自己的模型服务</p><h2 id="settings-title">模型连接设置</h2></div><button id="close-settings" class="text-button" aria-label="关闭模型设置">关闭</button></div>
+  <p id="settings-description" class="hint">支持 Chat Completions 格式的工具调用接口。配置仅保存在运行本程序的电脑上。</p>
+  <form id="settings-form">
+    <label class="field-label" for="settings-url">API 根地址（Base URL）</label><input id="settings-url" type="url" placeholder="https://your-provider.example/v1" maxlength="500" autocomplete="off" spellcheck="false" required><p class="hint">地址是否包含 /v1 以服务商文档为准，不要填写 /chat/completions。</p>
+    <label class="field-label" for="settings-model">模型名称</label><input id="settings-model" placeholder="填写服务商提供的模型标识" maxlength="150" autocomplete="off" spellcheck="false" required>
+    <label class="field-label" for="settings-key">API Key</label><input id="settings-key" type="password" maxlength="4096" autocomplete="off" spellcheck="false" placeholder="仅发送到本机后端保存"><p class="hint" id="key-hint">密钥不会回填到网页，也不会保存在浏览器存储中。</p>
+    <details><summary>高级模型参数</summary><label class="field-label" for="settings-extra">额外参数 JSON</label><textarea id="settings-extra" rows="3" maxlength="2000" spellcheck="false">{}</textarea><p class="hint">可选 thinking、reasoning_effort、temperature、top_p；仅填写服务商明确支持的参数。</p></details>
+    <p id="settings-overrides" class="quality-note" hidden></p>
+    <label class="check-label"><input id="test-consent" type="checkbox">同意连接测试发起一次可能计费的模型请求。测试不发送表格。</label>
+    <p id="settings-feedback" class="settings-feedback" role="status" aria-live="polite"></p>
+    <div class="settings-actions"><button type="submit" id="save-settings" class="primary">保存到本机</button><button type="button" id="test-settings" class="secondary">测试连接与工具调用</button><button type="button" id="clear-settings" class="text-button">清除本机保存</button></div>
+    <p class="hint">本机配置文件未加密，请只在自己的电脑运行。仓库不包含任何用户密钥或上传数据。</p>
+  </form>
+</dialog>
+</body></html>
