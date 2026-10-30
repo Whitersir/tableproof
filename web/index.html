@@ -10,7 +10,7 @@
 <a class="skip" href="#workspace">跳到核对工作区</a>
 <header class="topbar">
   <a class="brand" href="/" aria-label="表有据首页"><svg viewBox="0 0 36 36" aria-hidden="true"><rect x="2" y="3" width="24" height="29" rx="5"/><path d="M9 11h10M9 17h8M17 25l5 5 11-13"/></svg><span>表有据<small>TableProof</small></span></a>
-  <div class="top-actions"><div class="top-status"><span class="dot"></span><span id="service-status">连接本机服务…</span><span class="version">v0.2.1</span></div><button id="open-settings" class="settings-button">模型设置 <span id="settings-state">未配置</span></button></div>
+  <div class="top-actions"><div class="top-status"><span class="dot"></span><span id="service-status">连接本机服务…</span><span class="version">v0.3.0</span></div><button id="open-settings" class="settings-button">模型设置 <span id="settings-state">未配置</span></button></div>
 </header>
 <main>
   <div class="intro"><div><p class="eyebrow">工作区 / CSV</p><h1>报名与签到核对</h1><p class="intro-copy">导入两份表格，核对记录并导出结果。</p></div><button id="demo-button" class="secondary">载入示例并核对</button></div>
@@ -24,6 +24,7 @@
           <label class="file-box"><span class="file-kind">报名表</span><input type="file" name="registration" id="registration-file" accept=".csv" required><span class="file-note">包含报名人员的唯一标识</span></label>
           <label class="file-box"><span class="file-kind">签到表</span><input type="file" name="checkin" id="checkin-file" accept=".csv" required><span class="file-note">包含签到人员的对应标识</span></label>
         </div>
+        <div class="makeup-shortcut"><span>核对完成后，可为未到场人员登记补签。</span><button id="makeup-entry" type="button" class="text-button" disabled>补签登记</button></div>
         <p class="hint">CSV · UTF-8 或 GB18030 · 每表最多 2 MB / 10000 条</p>
         <button type="submit" id="upload-button" class="secondary full">导入并检查字段</button>
       </form>
@@ -57,7 +58,7 @@
         <section id="plan-review" class="plan-review" aria-labelledby="plan-title" hidden><div class="plan-heading"><h3 id="plan-title">确认核对方案</h3><span class="badge">尚未执行</span></div><p class="hint">请核对匹配字段与筛选范围。你也可以写下需要修改的内容，让模型重新提出方案。</p><dl id="plan-fields"></dl><label class="field-label" for="plan-note">需要调整？</label><textarea id="plan-note" rows="2" maxlength="3000" placeholder="例如：只看软工一班，日期改为2026-10-30"></textarea><div class="review-actions"><button id="approve-plan" class="primary">确认方案并执行</button><button id="revise-plan" class="secondary">按说明修改方案</button></div></section>
         <section id="clarification" class="clarification" aria-labelledby="question-title" hidden><h3 id="question-title">需要你确认</h3><p id="question-text"></p><form id="answer-form"><label class="field-label" for="answer">补充说明</label><textarea id="answer" rows="2" maxlength="3000"></textarea><button type="submit" class="secondary" id="continue-button">提交并继续</button></form><p id="local-question-hint" class="hint" hidden>请修改左侧字段，或勾选姓名匹配确认，然后重新核对。</p></section>
         <div id="result-content" hidden><div class="metrics" id="metrics"></div><div id="quality-note" class="quality-note"></div><div id="downloads" class="downloads"></div>
-          <div class="result-tabs" role="group" aria-label="查看结果类型"><button type="button" data-tab="groups" aria-pressed="true">分组统计</button><button type="button" data-tab="details" aria-pressed="false">人员明细</button><button type="button" data-tab="issues" aria-pressed="false">异常与待确认</button></div>
+          <div class="result-tabs" role="group" aria-label="查看结果类型"><button type="button" data-tab="groups" aria-pressed="true">分组统计</button><button type="button" data-tab="details" aria-pressed="false">人员明细</button><button type="button" data-tab="issues" aria-pressed="false">异常与待确认</button><button type="button" data-tab="makeups" aria-pressed="false">补签记录</button></div>
           <div class="table-toolbar"><span id="table-caption" class="small muted"></span><label class="sr-only" for="table-search">在当前预览中搜索</label><input type="search" id="table-search" placeholder="在当前预览中搜索"></div><div class="table-scroll" tabindex="0" aria-label="核对结果表"><table id="result-table"></table></div>
           <details class="rules"><summary>统计口径与匹配规则</summary><div id="rules-content"></div></details>
         </div>
@@ -68,6 +69,20 @@
   <section class="panel history-panel"><div class="panel-heading"><h2>最近任务</h2><button class="text-button" id="refresh-history">刷新记录</button></div><div id="history" class="history-list"><p class="muted small">尚无任务记录。</p></div></section>
   <footer><span>表有据 TableProof · 本地单用户版本</span><span>结果支持追溯，待确认项由你判断。</span></footer>
 </main>
+<dialog id="makeup-dialog" aria-labelledby="makeup-title" aria-describedby="makeup-description">
+  <div class="dialog-heading"><h2 id="makeup-title">补签登记</h2><button id="close-makeup" class="text-button" type="button">关闭</button></div>
+  <p id="makeup-description" class="hint">仅对当前核对结果中的未到场人员补签。保存后生成新结果，原始文件和补签前历史保持可查。</p>
+  <p id="makeup-scope" class="quality-note"></p>
+  <form id="makeup-form">
+    <label class="field-label" for="makeup-search">查找未到场人员</label><input id="makeup-search" type="search" maxlength="200" placeholder="输入学号、姓名或班级，可搜索完整名单">
+    <label class="field-label" for="makeup-person">选择人员</label><select id="makeup-person" size="5" required></select><p id="makeup-count" class="hint"></p>
+    <label class="field-label" for="makeup-time">实际签到时间</label><input id="makeup-time" type="datetime-local" required><p class="hint">填写人员实际参加本次活动的时间，系统另行记录本次补录时间。</p>
+    <label class="field-label" for="makeup-reason">补签原因</label><textarea id="makeup-reason" rows="2" maxlength="500" required placeholder="例如：签到设备故障，已人工核实到场"></textarea>
+    <label class="check-label"><input id="makeup-confirmed" type="checkbox" required>我确认该人员实际参加了当前统计范围内的活动。</label>
+    <p id="makeup-feedback" class="settings-feedback" role="status" aria-live="polite"></p>
+    <button id="save-makeup" type="submit" class="primary">保存补签并更新统计</button>
+  </form>
+</dialog>
 <dialog id="settings-dialog" aria-labelledby="settings-title" aria-describedby="settings-description">
   <div class="dialog-heading"><div><p class="eyebrow">使用你自己的模型服务</p><h2 id="settings-title">模型连接设置</h2></div><button id="close-settings" class="text-button" aria-label="关闭模型设置">关闭</button></div>
   <p id="settings-description" class="hint">支持 Chat Completions 格式的工具调用接口。配置仅保存在运行本程序的电脑上。</p>

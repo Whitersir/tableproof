@@ -54,6 +54,10 @@ main { max-width: 1540px; margin: auto; padding: 25px 28px 18px; }
 .file-box input { width: 100%; font-size: 12px; color: var(--muted); }
 input::file-selector-button { padding: 5px 8px; border: 1px solid #ccd2d5; border-radius: 3px; background: #f6f7f7; margin-right: 8px; cursor: pointer; color: var(--ink); }
 .file-note { display: block; font-size: 11px; color: var(--muted); margin-top: 5px; }
+.makeup-shortcut { display:flex; align-items:center; justify-content:space-between; gap:8px; grid-column:1/-1; margin-top:8px; color:var(--muted); font-size:11px; }
+.makeup-shortcut button { flex-shrink:0; }
+#makeup-person { min-height:124px; padding:4px; }
+#makeup-person option { padding:7px; }
 .hint { margin: 9px 0 12px; color: var(--muted); font-size: 12px; line-height: 1.65; }
 .primary { background: var(--accent); color: white; }
 .secondary { background: var(--paper); border-color: #bfc7cb; color: var(--ink); }

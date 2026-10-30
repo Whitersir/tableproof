@@ -1,12 +1,12 @@
 {
-  "recorded_at_utc": "2026-10-30T10:28:02.111285+00:00",
+  "recorded_at_utc": "2026-10-30T13:05:42.414354+00:00",
   "scope": "local_checks",
   "unit_tests": {
-    "tests": 72,
+    "tests": 91,
     "failures": 0,
     "errors": 0,
     "skipped": 0,
-    "seconds": 0.957
+    "seconds": 1.733
   },
   "business_cases": {
     "passed": 12,
@@ -14,7 +14,7 @@
   },
   "browser": {
     "passed": true,
-    "check_groups": 12
+    "check_groups": 13
   },
   "mock_http_integration": {
     "passed": true,
@@ -22,9 +22,9 @@
   },
   "real_model_tested": false,
   "source_sha256": {
-    "test-results/pytest.xml": "576214fa102172defaa14fd3520bfc401e9b832a959ad4070a707bd37ea84f19",
-    "evaluations/latest.json": "d20abc99eeec887b755a70cc2a175abf06b5e3bc1f7d39ec652493fb5c5aa97e",
-    "test-results/browser-check.json": "cfcfa1da86affa44b8d1b0359ea0265d390b6accbe0cf60c0057cb090a6ea17c",
-    "test-results/browser-agent-check.json": "6b1a06c996f710b53672eb2cdbb1b4c8fcd20caf82c7875413091ff1c192ef76"
+    "test-results/pytest.xml": "dbd03b728cfafebfeb568a57bcc4061db6f1217346eb0f16094767a96c5aef49",
+    "evaluations/latest.json": "2a3b43e8530a9dfbc6e69f28fc9770f35debf60ac3c41685dbd54213b6829ceb",
+    "test-results/browser-check.json": "2578e7a79a401938220e77848395ec07f55378b7e32d4c1aa219989be7c9039f",
+    "test-results/browser-agent-check.json": "2064ed99d677d39d4574e27c539d2ece2d212afb134b9d52afd556961a38ac2d"
   }
 }

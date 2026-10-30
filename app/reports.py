@@ -11,6 +11,7 @@ def markdown_report(run):
              f'运行方式：{"本地规则核对" if run["mode"] == "local" else "模型工具调用"}', "",
              "## 统计结果", "", f'- 有效报名：{t["valid_registered"]} 人', f'- 已到场：{t["arrived"]} 人',
              f'- 未到场：{t["absent"]} 人', f'- 到场率：{rate}',
+             f'- 其中人工补签：{t.get("makeup_people", 0)} 人',
              f'- 待确认并排除的报名记录：{t["excluded_registration_rows"]} 条',
              f'- 重复签到：{t["duplicate_checkin_rows"]} 条', f'- 未报名签到：{t["unregistered_people"]} 个标识',
              "", "## 分组统计", ""]
@@ -23,6 +24,10 @@ def markdown_report(run):
               f'- 报名筛选：{result["config"]["registration_filters"] or "无"}',
               f'- 签到筛选：{result["config"]["checkin_filters"] or "无"}', ""]
     lines.extend("- " + rule for rule in result["rules"])
+    if result.get("makeups"):
+        lines += ["", "## 人工补签记录", "", f'补签前任务：{run.get("parent_run_id", "")}', ""]
+        for event in result["makeups"]:
+            lines.append(f'- 标识 {" / ".join(event["key"])}；实际签到 {event["signed_at"]}；补录 {event["recorded_at"]}；原因：{event["reason"]}')
     lines += ["", "## 异常记录", "", f'共 {len(result["issues"])} 条异常标记；同一记录可能有多种标记。完整名单见异常 CSV。', "",
               "## 结果边界", "", "本报告使用程序核对结果生成。待确认项需要人工检查；不是对真实出席身份的认证。", ""]
     return "\n".join(lines)
@@ -31,9 +36,16 @@ def markdown_report(run):
 def export_csv(result, kind):
     if kind == "details":
         headers = result["sources"]["registration"]["headers"]
-        return csv_text([*headers, "核对状态", "报名源记录号", "签到源记录号"], [
+        return csv_text([*headers, "核对状态", "报名源记录号", "签到源记录号", "签到方式", "实际签到时间", "补录时间", "补签原因"], [
             [*[d["values"][h] for h in headers], d["status"], ";".join(map(str, d["registration_records"])),
-             ";".join(map(str, d["checkin_records"]))] for d in result["details"]])
+             ";".join(map(str, d["checkin_records"])),
+             "人工补签" if d.get("makeup") else "原始签到" if d["checkin_records"] else "未签到",
+             d.get("makeup", {}).get("signed_at", ""), d.get("makeup", {}).get("recorded_at", ""),
+             d.get("makeup", {}).get("reason", "")] for d in result["details"]])
+    if kind == "makeups":
+        return csv_text(["匹配标识", "报名源记录号", "实际签到时间（UTC）", "补录时间（UTC）", "原因"], [
+            [" / ".join(e["key"]), ";".join(map(str, e["registration_records"])), e["signed_at"], e["recorded_at"], e["reason"]]
+            for e in result.get("makeups", [])])
     if kind == "groups":
         return csv_text(["分组", "有效报名", "已到场", "未到场", "到场率（%）"], [
             [g["group"], g["registered"], g["arrived"], g["absent"], g["attendance_rate"]] for g in result["groups"]])

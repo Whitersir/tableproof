@@ -7,6 +7,10 @@ let currentTab = "groups";
 let busy = false;
 let modelConfigured = false;
 let pollVersion = 0;
+let makeupSourceId = null;
+let makeupOperationId = null;
+let makeupSearchVersion = 0;
+let makeupSearchTimer;
 const statusText = { completed: "已完成", running: "执行中", needs_input: "等待补充", needs_review: "等待审阅", failed: "执行失败" };
 
 function node(tag, text, className) {
@@ -48,6 +52,7 @@ function setBusy(value) {
   for (const id of ["demo-button", "upload-button", "mode-local", "mode-agent", "continue-button", "approve-plan", "revise-plan"]) $(id).disabled = value;
   $("run-button").disabled = value || !dataset || (mode === "agent" && !modelConfigured);
   $("run-button").textContent = value ? "正在执行…" : mode === "local" ? "开始本地核对 →" : "执行 Agent 任务 →";
+  $("makeup-entry").disabled = value || currentRun?.status !== "completed" || !currentRun?.result?.totals.absent;
 }
 
 function setMode(value) {
@@ -157,8 +162,11 @@ function renderTable() {
     rows = result.groups.map((g) => [g.group, g.registered, g.arrived, g.absent, `${g.attendance_rate}%`]);
   } else if (currentTab === "details") {
     const fields = result.sources.registration.headers;
-    headers = [...fields, "核对状态", "报名源记录", "签到源记录"];
-    rows = result.details.map((d) => [...fields.map((h) => d.values[h]), d.status, d.registration_records.join("、"), d.checkin_records.join("、") || "—"]);
+    headers = [...fields, "核对状态", "报名源记录", "签到源记录", "签到方式", "补签原因"];
+    rows = result.details.map((d) => [...fields.map((h) => d.values[h]), d.status, d.registration_records.join("、"), d.checkin_records.join("、") || "—", d.makeup ? "人工补签" : d.checkin_records.length ? "原始签到" : "未签到", d.makeup?.reason || "—"]);
+  } else if (currentTab === "makeups") {
+    headers = ["匹配标识", "实际签到时间", "补录时间", "原因"];
+    rows = (result.makeups || []).map((e) => [e.key.join(" / "), new Date(e.signed_at).toLocaleString("zh-CN"), new Date(e.recorded_at).toLocaleString("zh-CN"), e.reason]);
   } else {
     headers = ["异常类型", "来源文件", "源记录号", "说明", "原始字段"];
     rows = result.issues.map((i) => [i.type, i.source, i.record, i.detail, JSON.stringify(i.values)]);
@@ -167,12 +175,13 @@ function renderTable() {
   rows = rows.filter((r) => r.some((v) => String(v).toLowerCase().includes(search)));
   const table = makeTable(headers, rows);
   $("result-table").replaceChildren(...table.childNodes);
-  const total = result.preview_counts[currentTab];
+  const total = result.preview_counts[currentTab] || 0;
   $("table-caption").textContent = `共 ${total} 条 · 当前显示 ${rows.length} 条${total > 200 ? "（最多预览 200 条，下载含全部）" : ""}`;
 }
 
 function renderRun(run) {
   currentRun = run;
+  $("makeup-entry").disabled = busy || run?.status !== "completed" || !run?.result?.totals.absent;
   $("empty-state").hidden = Boolean(run);
   $("result-content").hidden = !run?.result || run.status !== "completed";
   $("run-progress").hidden = run?.status !== "running";
@@ -214,10 +223,20 @@ function renderRun(run) {
   for (const [label, value] of [["有效报名", t.valid_registered], ["已到场", t.arrived], ["未到场", t.absent], ["到场率", t.attendance_rate === null ? "—" : `${t.attendance_rate}%`]]) {
     const metric = node("div", undefined, "metric"); metric.append(node("span", label, "metric-label"), node("strong", value, "metric-value")); $("metrics").append(metric);
   }
-  $("quality-note").textContent = `待确认并排除的报名记录 ${t.excluded_registration_rows} 条 · 重复签到 ${t.duplicate_checkin_rows} 条 · 未报名签到 ${t.unregistered_people} 个标识。异常项可能重叠，请查看源记录。`;
+  $("quality-note").textContent = `人工补签 ${t.makeup_people || 0} 人 · 待确认并排除的报名记录 ${t.excluded_registration_rows} 条 · 重复签到 ${t.duplicate_checkin_rows} 条 · 未报名签到 ${t.unregistered_people} 个标识。异常项可能重叠，请查看源记录。`;
   $("downloads").replaceChildren();
   for (const [kind, title] of [["report", "下载核对报告"], ["details", "人员明细 CSV"], ["issues", "异常名单 CSV"], ["groups", "分组统计 CSV"]]) {
     const a = node("a", title); a.href = `/api/runs/${run.id}/export/${kind}`; $("downloads").append(a);
+  }
+  if (run.result.makeups?.length) {
+    const a = node("a", "补签记录 CSV"); a.href = `/api/runs/${run.id}/export/makeups`; $("downloads").append(a);
+  }
+  const makeupButton = node("button", "补签登记", "text-button"); makeupButton.type = "button"; makeupButton.disabled = !t.absent;
+  makeupButton.addEventListener("click", openMakeup); $("downloads").append(makeupButton);
+  if (run.parent_run_id) {
+    const parent = node("button", "查看补签前结果", "text-button"); parent.type = "button";
+    parent.addEventListener("click", async () => { try { renderRun(await api(`/api/runs/${run.parent_run_id}`)); } catch (error) { showError(error); } });
+    $("downloads").append(parent);
   }
   const rules = node("ul");
   const cfg = run.result.config;
@@ -232,7 +251,7 @@ async function refreshHistory() {
   if (!runs.length) $("history").append(node("p", "尚无任务记录。", "muted small"));
   for (const run of runs) {
     const button = node("button", undefined, "history-item"); button.type = "button";
-    button.append(node("strong", run.mode === "local" ? "报名与签到核对" : run.task), node("span", `${statusText[run.status]} · ${new Date(run.created_at).toLocaleString("zh-CN")}`));
+    button.append(node("strong", run.task || "报名与签到核对"), node("span", `${statusText[run.status]} · ${new Date(run.created_at).toLocaleString("zh-CN")}`));
     button.addEventListener("click", async () => {
       if (busy) return;
       clearError();
@@ -262,6 +281,58 @@ async function poll(id) {
     await refreshHistory();
   } finally { setBusy(false); }
 }
+
+async function loadMakeupCandidates() {
+  const version = ++makeupSearchVersion;
+  $("save-makeup").disabled = true;
+  $("makeup-person").disabled = true;
+  try {
+    const data = await api(`/api/runs/${makeupSourceId}/makeup-candidates?q=${encodeURIComponent($("makeup-search").value.trim())}`);
+    if (version !== makeupSearchVersion || !$("makeup-dialog").open) return;
+    $("makeup-person").replaceChildren();
+    for (const person of data.candidates) {
+      const option = node("option", Object.values(person.values).join(" · "));
+      option.value = JSON.stringify(person.key); $("makeup-person").append(option);
+    }
+    $("makeup-count").textContent = `匹配 ${data.total} 位未到场人员${data.total > 30 ? "，显示前 30 位，请细化搜索" : ""}。`;
+    $("makeup-person").disabled = !data.candidates.length;
+    $("save-makeup").disabled = !data.candidates.length;
+    makeupOperationId = null;
+  } catch (error) { $("makeup-feedback").textContent = error.message; }
+}
+
+async function openMakeup() {
+  if (busy || currentRun?.status !== "completed" || !currentRun.result?.totals.absent) return;
+  makeupSourceId = currentRun.id; makeupOperationId = null;
+  $("makeup-form").reset(); $("makeup-feedback").textContent = "";
+  const local = new Date(); local.setMinutes(local.getMinutes() - local.getTimezoneOffset());
+  $("makeup-time").value = local.toISOString().slice(0,16);
+  const cfg = currentRun.result.config;
+  $("makeup-scope").textContent = `当前匹配：${cfg.registration_keys.join(" + ")}；报名筛选：${JSON.stringify(cfg.registration_filters)}；签到筛选：${JSON.stringify(cfg.checkin_filters)}。补签只计入本次核对结果。`;
+  $("makeup-dialog").showModal(); await loadMakeupCandidates();
+}
+$("makeup-entry").addEventListener("click", openMakeup);
+$("close-makeup").addEventListener("click", () => $("makeup-dialog").close());
+$("makeup-dialog").addEventListener("close", () => { ++makeupSearchVersion; clearTimeout(makeupSearchTimer); });
+$("makeup-search").addEventListener("input", () => {
+  clearTimeout(makeupSearchTimer); ++makeupSearchVersion; $("save-makeup").disabled = true;
+  makeupSearchTimer = setTimeout(loadMakeupCandidates, 250);
+});
+for (const id of ["makeup-person", "makeup-time", "makeup-reason", "makeup-confirmed"]) $(id).addEventListener("input", () => { makeupOperationId = null; });
+$("makeup-form").addEventListener("submit", async (event) => {
+  event.preventDefault();
+  if (!$("makeup-person").value || $("save-makeup").disabled) return;
+  const date = new Date($("makeup-time").value);
+  if (Number.isNaN(date.getTime())) { $("makeup-feedback").textContent = "请填写有效的签到时间。"; return; }
+  makeupOperationId ||= crypto.randomUUID();
+  $("save-makeup").disabled = true; $("makeup-feedback").textContent = "正在保存补签…";
+  try {
+    const run = await post(`/api/runs/${makeupSourceId}/makeups`, { key: JSON.parse($("makeup-person").value), reason: $("makeup-reason").value.trim(), signed_at: date.toISOString(), confirmed_attendance: $("makeup-confirmed").checked, operation_id: makeupOperationId });
+    $("makeup-dialog").close(); setMode("local"); renderRun(run); setBusy(false); await refreshHistory();
+    $("run-status").textContent = "补签已保存";
+  } catch (error) { $("makeup-feedback").textContent = error.message; }
+  finally { $("save-makeup").disabled = false; }
+});
 
 $("mode-local").addEventListener("click", () => setMode("local"));
 $("mode-agent").addEventListener("click", () => setMode("agent"));

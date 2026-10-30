@@ -4,7 +4,7 @@ import os
 import subprocess
 import sys
 import time
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from pathlib import Path
 
 import httpx
@@ -124,6 +124,33 @@ def main():
                 page.locator(".history-item").nth(0).click()
                 expect(page.locator(".metric-value")).to_have_text(["6", "4", "2", "66.67%"])
                 checks.append("重新打开历史任务，恢复数据集、规则和结果")
+                page.locator("#makeup-entry").click()
+                expect(page.locator("#makeup-dialog")).to_be_visible()
+                page.locator("#makeup-search").fill("004")
+                expect(page.locator("#makeup-count")).to_contain_text("匹配 1 位")
+                page.locator("#makeup-person").select_option(json.dumps(["004"]))
+                page.locator("#makeup-time").fill((datetime.now() - timedelta(days=1)).strftime("%Y-%m-%dT09:30"))
+                page.locator("#makeup-reason").fill("签到设备故障，已人工核实到场")
+                page.locator("#makeup-confirmed").check()
+                page.screenshot(path=str(OUT / "makeup-form.png"))
+                page.locator("#save-makeup").click()
+                expect(page.locator("#run-status")).to_have_text("补签已保存")
+                expect(page.locator(".metric-value")).to_have_text(["6", "5", "1", "83.33%"])
+                page.locator('[data-tab="makeups"]').click()
+                expect(page.locator("#result-table")).to_contain_text("签到设备故障")
+                with page.expect_download() as downloaded:
+                    page.locator('#downloads a[href$="/makeups"]').click()
+                downloaded.value.save_as(str(OUT / "attendance-makeups.csv"))
+                assert "签到设备故障" in (OUT / "attendance-makeups.csv").read_text(encoding="utf-8-sig")
+                page.evaluate("window.scrollTo(0,0)")
+                page.screenshot(path=str(OUT / "makeup-result.png"), full_page=True)
+                page.get_by_role("button", name="查看补签前结果", exact=True).click()
+                expect(page.locator(".metric-value")).to_have_text(["6", "4", "2", "66.67%"])
+                page.reload()
+                expect(page.locator("#service-status")).to_have_text("本机服务已连接")
+                page.locator(".history-item").nth(0).click()
+                expect(page.locator(".metric-value")).to_have_text(["6", "5", "1", "83.33%"])
+                checks.append("搜索未到场人员、补签更新统计、记录 CSV、补签前快照及刷新后恢复")
                 page.locator('[data-tab="groups"]').click()
                 for width, height in [(375, 812), (768, 1024), (1024, 768), (1440, 1000)]:
                     page.set_viewport_size({"width": width, "height": height})

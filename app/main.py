@@ -4,6 +4,7 @@ import os
 import threading
 import json
 from pathlib import Path
+from fastapi import Query
 
 from fastapi import BackgroundTasks, FastAPI, File, HTTPException, UploadFile
 from fastapi.responses import FileResponse, JSONResponse, Response
@@ -19,6 +20,7 @@ from .reconcile import ClarificationNeeded, MatchConfig, reconcile
 from .reports import export_csv, markdown_report
 from .storage import Store, public_run
 from .tables import MAX_BYTES, InputError, parse_csv
+from .makeups import MakeupRequest
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -52,7 +54,7 @@ class ReviewRequest(BaseModel):
 
 
 def create_app(data_root: Path | None = None, config_root: Path | None = None):
-    app = FastAPI(title="TableProof · 表有据 API", version="0.2.1")
+    app = FastAPI(title="TableProof · 表有据 API", version="0.3.0")
     app.add_middleware(TrustedHostMiddleware, allowed_hosts=["127.0.0.1", "localhost", "testserver"])
     store = Store(data_root or Path(os.environ.get("TABLE_AGENT_DATA_DIR", ROOT / "data")))
     store.recover_interrupted()
@@ -110,7 +112,7 @@ def create_app(data_root: Path | None = None, config_root: Path | None = None):
     @app.get("/api/health")
     def health():
         config = app.state.settings.effective()
-        return {"status": "ok", "model_configured": config.ready, "version": "0.2.1"}
+        return {"status": "ok", "model_configured": config.ready, "version": "0.3.0"}
 
     @app.get("/api/settings/model")
     def get_settings():
@@ -162,6 +164,23 @@ def create_app(data_root: Path | None = None, config_root: Path | None = None):
     @app.get("/api/runs/{run_id}")
     def get_run(run_id: str):
         return public_run(store.run(run_id))
+
+    @app.get("/api/runs/{run_id}/makeup-candidates")
+    def makeup_candidates(run_id: str, q: str = Query(default="", max_length=200)):
+        run = store.run(run_id)
+        if run["status"] != "completed" or not run.get("result"):
+            raise HTTPException(409, "请先完成一次核对。")
+        query = q.strip().casefold()
+        candidates = [d for d in run["result"]["details"] if d["status"] == "未到场"
+                      and (not query or any(query in value.casefold() for value in d["values"].values()))]
+        return {"total": len(candidates), "candidates": [{"key": d["key"], "values": d["values"]} for d in candidates[:30]]}
+
+    @app.post("/api/runs/{run_id}/makeups")
+    def makeup(run_id: str, request: MakeupRequest):
+        try:
+            return public_run(store.makeup(run_id, request))
+        except ValueError as exc:
+            raise HTTPException(409, str(exc)) from None
 
     @app.post("/api/runs/local")
     def local(request: LocalRequest):
@@ -275,7 +294,7 @@ def create_app(data_root: Path | None = None, config_root: Path | None = None):
         if kind == "report":
             return Response(markdown_report(run), media_type="text/markdown; charset=utf-8",
                             headers={"Content-Disposition": 'attachment; filename="attendance-report.md"'})
-        if kind not in ("details", "issues", "groups"):
+        if kind not in ("details", "issues", "groups", "makeups"):
             raise HTTPException(404, "不支持的导出格式。")
         return Response(export_csv(run["result"], kind), media_type="text/csv; charset=utf-8",
                         headers={"Content-Disposition": f'attachment; filename="attendance-{kind}.csv"'})
