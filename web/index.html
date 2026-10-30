@@ -2,15 +2,15 @@
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>核对台 · 报名与签到</title>
+  <title>表有据 · TableProof — 表格核对与报告</title>
   <link rel="icon" href="/static/favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="/static/workspace.css"><script defer src="/static/app.js"></script>
 </head>
 <body>
 <a class="skip" href="#workspace">跳到核对工作区</a>
 <header class="topbar">
-  <a class="brand" href="/" aria-label="核对台首页"><svg viewBox="0 0 36 36" aria-hidden="true"><rect x="2" y="3" width="24" height="29" rx="5"/><path d="M9 11h10M9 17h8M17 25l5 5 11-13"/></svg><span>核对台<small>报名与签到</small></span></a>
-  <div class="top-actions"><div class="top-status"><span class="dot"></span><span id="service-status">连接本机服务…</span><span class="version">v0.2</span></div><button id="open-settings" class="settings-button">模型设置 <span id="settings-state">未配置</span></button></div>
+  <a class="brand" href="/" aria-label="表有据首页"><svg viewBox="0 0 36 36" aria-hidden="true"><rect x="2" y="3" width="24" height="29" rx="5"/><path d="M9 11h10M9 17h8M17 25l5 5 11-13"/></svg><span>表有据<small>TableProof</small></span></a>
+  <div class="top-actions"><div class="top-status"><span class="dot"></span><span id="service-status">连接本机服务…</span><span class="version">v0.2.1</span></div><button id="open-settings" class="settings-button">模型设置 <span id="settings-state">未配置</span></button></div>
 </header>
 <main>
   <div class="intro"><div><p class="eyebrow">工作区 / CSV</p><h1>报名与签到核对</h1><p class="intro-copy">导入两份表格，核对记录并导出结果。</p></div><button id="demo-button" class="secondary">载入示例并核对</button></div>
@@ -66,7 +66,7 @@
     </section>
   </div>
   <section class="panel history-panel"><div class="panel-heading"><h2>最近任务</h2><button class="text-button" id="refresh-history">刷新记录</button></div><div id="history" class="history-list"><p class="muted small">尚无任务记录。</p></div></section>
-  <footer><span>核对台 · 本地单用户版本</span><span>结果支持追溯，待确认项由你判断。</span></footer>
+  <footer><span>表有据 TableProof · 本地单用户版本</span><span>结果支持追溯，待确认项由你判断。</span></footer>
 </main>
 <dialog id="settings-dialog" aria-labelledby="settings-title" aria-describedby="settings-description">
   <div class="dialog-heading"><div><p class="eyebrow">使用你自己的模型服务</p><h2 id="settings-title">模型连接设置</h2></div><button id="close-settings" class="text-button" aria-label="关闭模型设置">关闭</button></div>

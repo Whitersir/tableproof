@@ -1,12 +1,12 @@
 {
-  "recorded_at_utc": "2026-10-30T10:14:27.383577+00:00",
+  "recorded_at_utc": "2026-10-30T10:28:02.111285+00:00",
   "scope": "local_checks",
   "unit_tests": {
     "tests": 72,
     "failures": 0,
     "errors": 0,
     "skipped": 0,
-    "seconds": 0.995
+    "seconds": 0.957
   },
   "business_cases": {
     "passed": 12,
@@ -22,9 +22,9 @@
   },
   "real_model_tested": false,
   "source_sha256": {
-    "test-results/pytest.xml": "9b8e8c15bc2dd17bea3baf856515a31519e2b7ba3cde26fc636129e5b8a7526a",
-    "evaluations/latest.json": "d9438a3857bae23cddcffa99eb66997acc923e9f70fab47de500bee4ef7463dd",
-    "test-results/browser-check.json": "3fb085588289f971eee00c229ab34c44363b1eba9bd8c12ae64c6a72a5b7a428",
-    "test-results/browser-agent-check.json": "fa8e0d7471a52b0d27ca19c22be62e0809b1d9315b707ded8efa91c8f11f344d"
+    "test-results/pytest.xml": "576214fa102172defaa14fd3520bfc401e9b832a959ad4070a707bd37ea84f19",
+    "evaluations/latest.json": "d20abc99eeec887b755a70cc2a175abf06b5e3bc1f7d39ec652493fb5c5aa97e",
+    "test-results/browser-check.json": "cfcfa1da86affa44b8d1b0359ea0265d390b6accbe0cf60c0057cb090a6ea17c",
+    "test-results/browser-agent-check.json": "6b1a06c996f710b53672eb2cdbb1b4c8fcd20caf82c7875413091ff1c192ef76"
   }
 }

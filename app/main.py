@@ -52,7 +52,7 @@ class ReviewRequest(BaseModel):
 
 
 def create_app(data_root: Path | None = None, config_root: Path | None = None):
-    app = FastAPI(title="核对台 API", version="0.2.0")
+    app = FastAPI(title="TableProof · 表有据 API", version="0.2.1")
     app.add_middleware(TrustedHostMiddleware, allowed_hosts=["127.0.0.1", "localhost", "testserver"])
     store = Store(data_root or Path(os.environ.get("TABLE_AGENT_DATA_DIR", ROOT / "data")))
     store.recover_interrupted()
@@ -68,7 +68,7 @@ def create_app(data_root: Path | None = None, config_root: Path | None = None):
     async def local_boundary(request, call_next):
         if request.method in ("POST", "PUT", "DELETE"):
             if request.headers.get("x-requested-with") != "table-report-agent":
-                return JSONResponse({"detail": "请通过本机核对台页面操作。"}, status_code=403)
+                return JSONResponse({"detail": "请通过本机表有据页面操作。"}, status_code=403)
             origin = request.headers.get("origin")
             if origin and origin not in (f"http://{request.headers.get('host')}", f"https://{request.headers.get('host')}"):
                 return JSONResponse({"detail": "不接受其他站点发起的请求。"}, status_code=403)
@@ -110,7 +110,7 @@ def create_app(data_root: Path | None = None, config_root: Path | None = None):
     @app.get("/api/health")
     def health():
         config = app.state.settings.effective()
-        return {"status": "ok", "model_configured": config.ready, "version": "0.2.0"}
+        return {"status": "ok", "model_configured": config.ready, "version": "0.2.1"}
 
     @app.get("/api/settings/model")
     def get_settings():

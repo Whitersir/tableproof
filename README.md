@@ -1,8 +1,20 @@
-# 核对台 · Table Report Agent
+# 表有据 · TableProof
+
+[![Checks](https://github.com/Whitersir/tableproof/actions/workflows/checks.yml/badge.svg)](https://github.com/Whitersir/tableproof/actions/workflows/checks.yml)
+[![Python 3.11+](https://img.shields.io/badge/Python-3.11%2B-3776AB)](requirements.txt)
+[![MIT License](https://img.shields.io/badge/License-MIT-15634e)](LICENSE)
+
+**支持 AI 工具调用的表格核对与报告工作台。**
 
 报名表、签到表的核对工作台。使用 Python 进行可追溯的计算，使用可选的模型工具调用理解任务，并在执行前让用户审阅匹配与筛选方案。
 
 适用于活动组织、课程助教、小团队名单核对。支持自带模型 API（BYOK），无需配置 API 也能运行本地核对。
+
+[下载源码包](https://github.com/Whitersir/tableproof/releases/download/v0.2.1/TableProof-v0.2.1-source.zip) · [版本发布页](https://github.com/Whitersir/tableproof/releases/tag/v0.2.1) · [设计取舍](docs/设计取舍.md) · [检查记录](evaluations/checks.json)
+
+源码包包含程序、示例、截图、文档和测试，需要安装 Python 与依赖；不包含 EXE、API Key 或用户数据。
+
+## 界面预览
 
 ![核对工作台，使用虚构示例数据](docs/assets/workspace.png)
 
@@ -20,8 +32,8 @@
 需要 **Python 3.11+**，无 Node.js 或前端构建依赖。
 
 ```bash
-git clone https://github.com/Whitersir/table-report-agent.git
-cd table-report-agent
+git clone https://github.com/Whitersir/tableproof.git
+cd tableproof
 python -m venv .venv
 ```
 
